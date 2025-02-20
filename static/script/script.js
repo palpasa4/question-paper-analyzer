@@ -21,46 +21,37 @@ function validateFile() {
     return true;
 }
 
-function isValidQuestionFormat(contents) {
-    const questions = contents.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
-    const questionPattern = /^[A-Z].*\?$/;
-    const specificTermPattern = /^(Describe|Define|Differentiate|Classify)/;
+// function isValidQuestionFormat(contents) {
+//     const questions = contents.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+//     const questionPattern = /^[A-Z].*\?$/;
+//     const specificTermPattern = /^(Describe|Define|Differentiate|Classify)/;
 
-    return questions.every(line => {
+//     return questions.every(line => {
+//         return (
+//             (questionPattern.test(line) && !specificTermPattern.test(line)) || 
+//             (specificTermPattern.test(line) && line.endsWith('.'))
+//         );
+//     });
+// }
+
+function isValidQuestionFormat(contents) {
+    // Define patterns for validation
+    const questionPattern = /^[A-Z].*\?$/; 
+    const specificTermPattern = /^(Describe|Define|Differentiate|Classify|Explain|Compare|Convert|A| In|The|For|Demonstrate|Write|Discuss)/; 
+
+    // Split contents into lines, then split by whitespace preceded by . or ?
+    const questions = contents
+        .split(/\\r?\\n/) // Split into lines by newline
+        .flatMap(line => line.trim().split(/(?<=[?]|(?<!\d)\.)\s+/))
+        .filter(line => line.length > 0); 
+    
+    return questions.every(question => {
         return (
-            (questionPattern.test(line) && !specificTermPattern.test(line)) || 
-            (specificTermPattern.test(line) && line.endsWith('.'))
+            (questionPattern.test(question) && !specificTermPattern.test(question)) || // Ends with '?' and doesn't start with specific terms
+            (specificTermPattern.test(question) && question.endsWith('.')) // Starts with specific terms and ends with '.'
         );
     });
 }
-
-/*function isValidQuestionFormat(contents) {
-    // Split the content by newlines and trim extra spaces
-    const questions = contents.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
-    
-    // Regular expression to check if a question ends with a question mark
-    const questionPattern = /^[A-Z].*\?$/;
-    
-    // Pattern for specific terms (Describe, Define, Differentiate, Classify, Compare, Convert)
-    const specificTermPattern = /^(Describe|Define|Differentiate|Classify|Explain|Compare|Convert)/;
-
-    // Iterate through each line (representing a set of questions)
-    return questions.every(line => {
-        // Split the line into individual sub-questions based on whitespace
-        const subQuestions = line.split(/\s+/).map(subQuestion => subQuestion.trim()).filter(subQuestion => subQuestion.length > 0);
-
-        // Validate each sub-question individually
-        return subQuestions.every(subQuestion => {
-            return (
-                // Valid question should either end with a "?" (and not be a specific term) 
-                (questionPattern.test(subQuestion) && !specificTermPattern.test(subQuestion)) || 
-                // Or should be a specific term question that ends with "."
-                (specificTermPattern.test(subQuestion) && subQuestion.endsWith('.'))
-            );
-        });
-    });
-}*/
-
 
 function displayErrorMessage(message) {
     const errorMessage = document.getElementById('error-message');
@@ -119,4 +110,33 @@ function sendFileForAnalysis(file) {
     .catch(error => {
         alert("Error uploading file:", error.message);
     });
+}
+
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    sidebar.classList.toggle('active');
+}
+
+function confirmDelete(userId) {
+    // Display confirmation popup
+    const userConfirmation = confirm("Are you sure you want to delete this user?");
+    
+    if (userConfirmation) {
+        // If confirmed, submit the form
+        document.getElementById("delete-form-" + userId).submit();
+        return true;
+    } else {
+        // If not confirmed, do nothing (form is not submitted)
+        return false;
+    }
+}
+
+function confirmLogout() {
+    // Show a confirmation dialog
+    var userConfirmation = confirm("Are you sure you want to log out?");
+    
+    // If the user confirms, proceed with logout
+    if (userConfirmation) {
+        window.location.href = "/admin/logout";
+    }
 }

@@ -105,8 +105,6 @@ main {
     text-align: center;
     max-width: 500px;
     width: 100%;
-    max-height: 1000px;
-    overflow:auto;
 }
 
 .content-container h2 {
@@ -116,10 +114,11 @@ main {
     margin-bottom: 15px;
 }
 
-.content-container p{
+.content-container p {
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
     font-size: 20px;
     text-align: justify;
+    text-align: center;
     color: white;
     margin-bottom: 20px;
 }
@@ -180,10 +179,9 @@ background: #ffc107;
 color: #000;
 }
 
-
 /* Button styling */
 .analyze-link button, .btn{
-background-color: red;
+    background-color: red;
 color: white;
 padding: 10px 20px;
 border: none;
@@ -193,21 +191,24 @@ font-size: 1em;
 transition: background-color 0.3s;
 }
 
-.analyze-link button:hover, .btn:hover{
-background-color: #45a049;
+.analyze-link button,.btn:hover {
+    background-color: #45a049;
 }
 
 /* Footer styling */
 footer {
-font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-background-color: rgba(0, 0, 0, 0.6);
-color: white;
-padding: 10px;
-text-align: center;
-font-size: 0.9em;
-position: relative;
-bottom: 0;
-width: 100%;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 10px;
+    text-align: center;
+    font-size: 0.9em;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+.choose-button-text>input{
+    color: #fff!important;
 }
 
 .button-container {
