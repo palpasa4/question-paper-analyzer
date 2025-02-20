@@ -9,13 +9,13 @@ app.permanent_session_lifetime = timedelta(days=1)  # Set session to last for a 
 
 # Database connection function
 def get_db_connection():
-    conn = sqlite3.connect("palpasadb.db")
+    conn = sqlite3.connect("sqlite db/palpasadb.db")
     conn.row_factory = sqlite3.Row  # Allows dictionary-like access
     return conn
 
 # Initialize the database if not exists
 def init_db():
-    conn = sqlite3.connect("palpasadb.db")
+    conn = sqlite3.connect("sqlite db/palpasadb.db")
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
@@ -62,7 +62,7 @@ def register():
     password = request.form['password']
 
     try:
-        conn = sqlite3.connect("palpasadb.db")
+        conn = sqlite3.connect("sqlite db/palpasadb.db")
         cursor = conn.cursor()
         cursor.execute('INSERT INTO users (fullname, username, email, password) VALUES (?, ?, ?, ?)', 
                        (fullname, username, email, password))
@@ -89,7 +89,7 @@ def login():
         password = request.form['password']
 
 
-        conn = sqlite3.connect("palpasadb.db")
+        conn = sqlite3.connect("sqlite db/palpasadb.db")
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password))
         user = cursor.fetchone()
@@ -138,12 +138,12 @@ def analyze():
         global questions
         questions = questions_list
         results = process_questions(questions)
-        print(results)
+        # print(results)
         
         difficulty_mapping = {0: 'easy', 1: 'moderate', 2: 'hard'}
         difficulty_level = [difficulty_mapping[int(result)] for result in results]
 
-        conn = sqlite3.connect('palpasadb.db')
+        conn = sqlite3.connect('sqlite db/palpasadb.db')
         cursor = conn.cursor()
         
         user_id = session.get('user_id')  # Get user_id from session
@@ -171,7 +171,7 @@ def analyze():
 @app.route('/results')
 def results():
     user_id = session.get('user_id')
-    conn = sqlite3.connect('palpasadb.db')
+    conn = sqlite3.connect('sqlite db/palpasadb.db')
     cursor = conn.cursor()
     cursor.execute("""
         SELECT MAX(created_at) FROM classified_questions
@@ -191,7 +191,7 @@ def results():
 @app.route('/history')
 def history():
     user_id = session.get('user_id')
-    conn = sqlite3.connect('palpasadb.db')
+    conn = sqlite3.connect('sqlite db/palpasadb.db')
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM classified_questions WHERE user_id = ?", (user_id,))
     rows = cursor.fetchall()
@@ -203,6 +203,102 @@ def logout():
     session.clear()
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
+
+# Admin Login Route
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        conn = get_db_connection()
+        admin = conn.execute('SELECT * FROM admin WHERE username = ?', (username,)).fetchone()
+        conn.close()
+        if admin and password:
+            session['admin_logged_in'] = True
+            return redirect(url_for('admin_dashboard'))
+        else:
+            flash('Invalid username or password. Please try again.', 'error')
+            return render_template('admin_login.html')
+    return render_template('admin_login.html')
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+
+    # Connect to SQLite database
+    conn = get_db_connection()
+
+    # Get stats from the database
+    num_users = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
+    num_questions = conn.execute('SELECT COUNT(*) FROM classified_questions').fetchone()[0]
+    conn.close()
+
+    # Read accuracy from classification_report.json
+    try:
+        with open("classification_report.json", "r") as f:
+            report_data = json.load(f)
+            model_accuracy = round(report_data.get("accuracy", 0) * 100, 2)  # Convert to percentage and round
+    except (FileNotFoundError, json.JSONDecodeError):
+        model_accuracy = 0  # Default value if file doesn't exist or is invalid
+
+    # Pass the data to the template
+    return render_template(
+        'admin_dashboard.html',
+        num_users=num_users,
+        num_questions=num_questions,
+        model_accuracy=model_accuracy
+    )
+
+
+@app.route('/admin/users')
+def admin_users():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    conn = get_db_connection()
+    users = conn.execute('SELECT * FROM users').fetchall()
+    conn.close()
+    return render_template('admin_users.html', users=users)
+
+
+# Delete User
+@app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
+def delete_user(user_id):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    conn = get_db_connection()
+    conn.execute('DELETE FROM users WHERE user_id = ?', (user_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('admin_users'))
+
+
+# Admin Logout
+@app.route('/admin/logout')
+def admin_logout():
+    session.clear()
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('admin_login'))   
+
+
+# Analytics Page
+@app.route('/admin/analytics')
+def admin_analytics():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    # Load the classification report from JSON
+    try:
+        with open("classification_report.json", "r") as f:
+            classification_report = json.load(f)
+    except FileNotFoundError:
+        classification_report = None
+    
+    # Define the path to the saved confusion matrix image
+    cm_path = "static/confusion_matrix.png"
+
+    return render_template('admin_analytics.html', report=classification_report, cm_path=cm_path)
+    
 
 if __name__ == "__main__":
     app.run(debug=True)
