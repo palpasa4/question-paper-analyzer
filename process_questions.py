@@ -36,7 +36,7 @@ def extract_qtype(question):
     descriptive_keywords = {"justify", "method", "process", "procedure", "solution", "explain", "describe", "illustrate", "state", "discuss", "write", "why"}
     proof_keywords = {"prove", "verify", "demonstrate", "show"}
     statistical_keywords = {"test", "hypothesis", "mean", "variance", "confidence", "significance"}
-    what_keywords = {"what", "define", "list"}
+    wh_keywords = {"what","why","which"}
     differentiate_keywords = {"differentiate", "contrast", "compare"}
     mathematical_keywords = {"solve", "convert", "find", "equation", "function", "integral", "derivative", "matrix"}
     discrete_keywords = {"graph", "logic", "combinatorics", "relation", "algorithm"}
@@ -54,8 +54,8 @@ def extract_qtype(question):
                 scores["Proof"] += 1
             elif word in statistical_keywords:
                 scores["Statistical"] += 1
-            elif word in what_keywords:
-                scores["What"] += 1
+            elif word in wh_keywords:
+                scores["Wh"] += 1
             elif word in differentiate_keywords:
                 scores["Differentiate"] += 1
             elif word in mathematical_keywords:
@@ -172,6 +172,7 @@ def process_questions(questions):
         # Make predictions using the pre-trained custom decision tree model
         predictions = [predict(model, row) for row in features_df_numeric.values]
 
+    print(features_df_numeric)
     # Print the predictions
     print(predictions)
     return predictions
